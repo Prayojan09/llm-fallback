@@ -1,0 +1,30 @@
+aliases:
+  smart:
+    - provider: openai
+      model: gpt-4o
+    - provider: anthropic
+      model: claude-3-5-sonnet-latest
+    - provider: ollama
+      model: llama3
+  fast:
+    - provider: openai
+      model: gpt-4o-mini
+    - provider: ollama
+      model: llama3.2
+  demo-failover:
+    - provider: fake
+      model: fake-model
+    - provider: fake_backup
+      model: fake-backup-model
+  claude-haiku:
+    - provider: openrouter
+      model: anthropic/claude-haiku-5.5
+  openai/gpt-6.1-terra-pro:
+    - provider: openrouter
+      model: openai/gpt-6.1-terra-pro
+  "NVIDIA: Nemotron 3.5 Lightning":
+    - provider: openrouter
+      model: nvidia/nemotron-3.5-lightning
+  "NVIDIA: Nemotron 3 Ultra":
+    - provider: openrouter
+      model: nvidia/nemotron-3-ultra-550b-a55b

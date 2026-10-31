@@ -1,0 +1,36 @@
+# USD per 1,000,000 tokens. Update when upstream pricing changes.
+# Rates verified 2026-10-24 against OpenAI and Anthropic official pricing pages.
+models:
+  gpt-4o:
+    input_usd_per_million: 2.5
+    output_usd_per_million: 10.0
+  gpt-4o-mini:
+    input_usd_per_million: 0.15
+    output_usd_per_million: 0.6
+  claude-3-5-sonnet-latest:
+    input_usd_per_million: 3.0
+    output_usd_per_million: 15.0
+  llama3:
+    input_usd_per_million: 0.0
+    output_usd_per_million: 0.0
+  llama3.2:
+    input_usd_per_million: 0.0
+    output_usd_per_million: 0.0
+  fake-model:
+    input_usd_per_million: 0.0
+    output_usd_per_million: 0.0
+  fake-backup-model:
+    input_usd_per_million: 0.0
+    output_usd_per_million: 0.0
+  anthropic/claude-haiku-5.5:
+    input_usd_per_million: 0.1
+    output_usd_per_million: 0.5
+  openai/gpt-6.1-terra-pro:
+    input_usd_per_million: 1.0
+    output_usd_per_million: 5.0
+  nvidia/nemotron-3.5-lightning:
+    input_usd_per_million: 0.065
+    output_usd_per_million: 0.18
+  nvidia/nemotron-3-ultra-550b-a55b:
+    input_usd_per_million: 0.5
+    output_usd_per_million: 2.2

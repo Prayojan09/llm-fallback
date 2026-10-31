@@ -1,0 +1,2 @@
+request_duration_buckets_seconds: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120]
+trace_sample_ratio: 1.0

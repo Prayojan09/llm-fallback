@@ -1,0 +1,13 @@
+max_request_body_bytes: 1048576
+response_cache_ttl_seconds: 300
+provider_concurrency_default: 20
+provider_concurrency_limits:
+  fake: 100
+  openai: 20
+  anthropic: 20
+  ollama: 5
+provider_concurrency_wait_seconds: 0.25
+provider_concurrency_poll_seconds: 0.025
+provider_concurrency_lease_seconds: 120
+provider_concurrency_redis_failure_policy: open
+graceful_shutdown_timeout_seconds: 30

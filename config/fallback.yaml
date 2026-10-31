@@ -1,0 +1,12 @@
+# Per-provider retries, timeouts, and distributed circuit breaker policy.
+retries_per_provider: 1
+retry_base_seconds: 0.15
+retry_max_seconds: 2.0
+retry_jitter_seconds: 0.1
+attempt_timeout_seconds: 25
+overall_timeout_seconds: 90
+breaker_failure_threshold: 5
+breaker_failure_window_seconds: 60
+breaker_cooldown_seconds: 30
+breaker_half_open_probes: 1
+breaker_redis_failure_policy: open

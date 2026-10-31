@@ -1,0 +1,10 @@
+# Team request/token limits are refill rates per minute. These multipliers define
+# their independent burst capacities unless a team has an explicit override.
+request_burst_multiplier: 2
+token_burst_multiplier: 2
+default_completion_tokens: 256
+characters_per_token_estimate: 4
+budget_warn_ratio: 0.8
+usage_queue_size: 1000
+redis_failure_policy: closed
+minimum_key_ttl_seconds: 7200

@@ -1,0 +1,258 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "A plain-language view of gateway traffic, successful requests, errors, rate limits, provider health, fallbacks, latency, tokens, and spend.",
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "targetBlank": true,
+      "title": "Gateway API docs",
+      "tooltip": "Open the interactive gateway API documentation",
+      "type": "link",
+      "url": "http://localhost:8000/docs"
+    }
+  ],
+  "panels": [
+    {
+      "type": "text",
+      "title": "How to read this dashboard",
+      "description": "Metrics are aggregates and never include prompts, completions, or API keys.",
+      "gridPos": {"h": 3, "w": 24, "x": 0, "y": 0},
+      "id": 1,
+      "options": {
+        "mode": "markdown",
+        "content": "**Green:** requests are completing. **Red:** the gateway returned an error. **Rate limited:** a team exceeded its request or token allowance. **Provider failures/timeouts:** an upstream model could not serve a request. **Fallbacks:** another provider answered instead.\n\nFor the cause of a specific failure, check the gateway terminal with `docker compose logs -f gateway` from the project folder. Grafana shows counts and trends; it does not store stack traces."
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Requests received",
+      "description": "Total chat requests during the selected dashboard time range.",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 3},
+      "id": 2,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum(increase(gateway_requests_total{team=~\"$team\"}[$__range])) or vector(0)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "blue"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "auto", "textMode": "value", "colorMode": "value", "graphMode": "area", "justifyMode": "center", "wideLayout": true}
+    },
+    {
+      "type": "stat",
+      "title": "Successful responses",
+      "description": "Chat requests that completed with HTTP 2xx during the selected time range.",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 3},
+      "id": 3,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum(increase(gateway_requests_total{team=~\"$team\",status=\"2xx\"}[$__range])) or vector(0)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "green"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "auto", "textMode": "value", "colorMode": "value", "graphMode": "area", "justifyMode": "center", "wideLayout": true}
+    },
+    {
+      "type": "stat",
+      "title": "Requests with errors",
+      "description": "Responses marked 4xx, 5xx, or stream error. Open this alongside Rate limited and Provider attempts to narrow down the issue.",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 3},
+      "id": 4,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum(increase(gateway_requests_total{team=~\"$team\",status=~\"4xx|5xx|error\"}[$__range])) or vector(0)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "none", "justifyMode": "center", "wideLayout": true}
+    },
+    {
+      "type": "stat",
+      "title": "Rate-limited requests",
+      "description": "Requests rejected because a team used its request or token capacity. A value above zero means a team may need a limit adjustment or lower traffic.",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 3},
+      "id": 5,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum(increase(gateway_rate_limited_total{team=~\"$team\"}[$__range])) or vector(0)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 10}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "none", "justifyMode": "center", "wideLayout": true}
+    },
+    {
+      "type": "stat",
+      "title": "Open provider breakers",
+      "description": "Providers currently marked unavailable by the circuit breaker. Zero means no provider breaker is open.",
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 3},
+      "id": 6,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum(gateway_circuit_state == 2) or vector(0)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "none", "justifyMode": "center", "wideLayout": true}
+    },
+    {
+      "type": "stat",
+      "title": "P95 response time",
+      "description": "95% of chat requests in the recent window completed within this time. This is an end-to-end gateway measurement.",
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 3},
+      "id": 7,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(gateway_request_duration_seconds_bucket{team=~\"$team\"}[5m])))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "decimals": 2, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 2}, {"color": "red", "value": 5}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "auto", "textMode": "value", "colorMode": "value", "graphMode": "area", "justifyMode": "center", "wideLayout": true}
+    },
+    {
+      "type": "row",
+      "title": "Traffic and response times",
+      "description": "See request volume and latency trends. Error status values are grouped into 4xx, 5xx, and stream error.",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 7},
+      "id": 8,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Requests by result",
+      "description": "Request rate over time. A rise in 4xx/5xx usually indicates a client, gateway, or provider problem.",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 9,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum by (status) (rate(gateway_requests_total{team=~\"$team\"}[5m]))", "legendFormat": "{{status}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 12, "showPoints": "never", "stacking": {"mode": "none", "group": "A"}}}, "overrides": []},
+      "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Response time percentiles",
+      "description": "P50 is typical latency; P95 and P99 help reveal slower requests.",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 10,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le) (rate(gateway_request_duration_seconds_bucket{team=~\"$team\"}[5m])))", "legendFormat": "Typical (P50)", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(gateway_request_duration_seconds_bucket{team=~\"$team\"}[5m])))", "legendFormat": "Slow requests (P95)", "refId": "B"},
+        {"expr": "histogram_quantile(0.99, sum by (le) (rate(gateway_request_duration_seconds_bucket{team=~\"$team\"}[5m])))", "legendFormat": "Slowest requests (P99)", "refId": "C"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s", "decimals": 2, "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 8, "showPoints": "never"}}, "overrides": []},
+      "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}}
+    },
+    {
+      "type": "row",
+      "title": "Problems and provider recovery",
+      "description": "Find rate-limit spikes, upstream failures, timeouts, and successful fallback transitions.",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 16},
+      "id": 11,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Rate limits by team",
+      "description": "A team with repeated rate limits may need a higher burst capacity or a lower request rate.",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 17},
+      "id": 12,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum by (team) (rate(gateway_rate_limited_total{team=~\"$team\"}[5m]))", "legendFormat": "Team {{team}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"drawStyle": "bars", "lineWidth": 1, "fillOpacity": 65}}, "overrides": []},
+      "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Provider attempts",
+      "description": "Each upstream attempt ends as success, failure, or timeout. Failures here may trigger another provider.",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 17},
+      "id": 13,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum by (provider, outcome) (rate(gateway_provider_attempts_total[5m]))", "legendFormat": "{{provider}} · {{outcome}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 10}}, "overrides": []},
+      "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Successful provider fallbacks",
+      "description": "Counts when the gateway moved to a later provider and got a response.",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 17},
+      "id": 14,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum by (from, to) (increase(gateway_fallbacks_total[$__range]))", "legendFormat": "{{from}} → {{to}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "bars", "lineWidth": 1, "fillOpacity": 65}}, "overrides": []},
+      "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}}
+    },
+    {
+      "type": "table",
+      "title": "Provider failures and timeouts",
+      "description": "Total failed upstream attempts during the selected time range. Use the gateway logs to find the underlying error message.",
+      "gridPos": {"h": 7, "w": 24, "x": 0, "y": 25},
+      "id": 15,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum by (provider, model, outcome) (increase(gateway_provider_attempts_total{outcome=~\"failure|timeout\"}[$__range]))", "format": "table", "instant": true, "refId": "A"}],
+      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}, "unit": "short", "decimals": 0}, "overrides": []},
+      "options": {"showHeader": true, "cellHeight": "md", "footer": {"show": false, "reducer": ["sum"], "countRows": false}}
+    },
+    {
+      "type": "row",
+      "title": "Usage and cost",
+      "description": "Usage and estimated cost for the selected dashboard time range; budget use is the current monthly ratio.",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 32},
+      "id": 16,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Token usage",
+      "description": "Input and output token throughput by team.",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 33},
+      "id": 17,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum by (team, direction) (rate(gateway_tokens_total{team=~\"$team\"}[5m]))", "legendFormat": "Team {{team}} · {{direction}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "tokps", "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 10}}, "overrides": []},
+      "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Estimated provider cost",
+      "description": "Cost recorded during the selected time range, grouped by team. Compare with provider billing for final charges.",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 33},
+      "id": 18,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "sum by (team) (increase(gateway_cost_usd_total{team=~\"$team\"}[$__range]))", "legendFormat": "Team {{team}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4, "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 12}}, "overrides": []},
+      "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Monthly budget used",
+      "description": "Current fraction of the team’s monthly budget used. The gateway tracks this for teams with a positive budget.",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 41},
+      "id": 19,
+      "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+      "targets": [{"expr": "gateway_budget_used_ratio{team=~\"$team\"}", "legendFormat": "Team {{team}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.8}, {"color": "red", "value": 1}]}}, "overrides": []},
+      "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}}
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 39,
+  "tags": ["gateway", "operations", "monitoring"],
+  "templating": {
+    "list": [
+      {
+        "current": {"selected": true, "text": "All teams", "value": "$__all"},
+        "datasource": {"type": "prometheus", "uid": "gateway-prometheus"},
+        "definition": "label_values(gateway_requests_total, team)",
+        "includeAll": true,
+        "allValue": ".*",
+        "label": "Team",
+        "name": "team",
+        "options": [],
+        "query": {"query": "label_values(gateway_requests_total, team)", "refId": "PrometheusVariableQueryEditor-VariableQuery"},
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "LLM Gateway — Operations",
+  "uid": "llm-gateway-overview",
+  "version": 2
+}
